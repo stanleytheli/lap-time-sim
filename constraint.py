@@ -10,11 +10,8 @@
 # (a_x/mu_x g)^2 + (a_y/mu_y g)^2 = 1 (operating at 'pareto efficiency' of acceleration)
 # ==> a_x = mu_x g sqrt(1 - (v_0^2/r mu_y g)^2)
 
-# can do multiple iterations to stabilize:
-# recalculate with 
-
-# to account for F_motor:
-# 
+# to account for engine, the thing above is actually a_x_friction
+# REAL a_x = min(a_x_engine, a_x_friction)
 
 # after expanding, find minimum at each point, then calculate time as sum(dx/v)
 
@@ -60,7 +57,10 @@ class Constraint:
                 continue
 
             # a_x = mu_x g sqrt(1 - (v_0^2/r mu_y g)^2)
-            a_x = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r[j] * mu_y * g)) ** 2) 
+            a_x_friction = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r[j] * mu_y * g)) ** 2) 
+            a_x_engine = self.car.a_max(v_0)
+            a_x = min(a_x_engine, a_x_friction)
+
             self.v[j] = np.sqrt(v_0 ** 2 + 2 * a_x * dx)
         
         # decelerate
@@ -73,7 +73,10 @@ class Constraint:
                 continue
 
             # a_x = mu_x g sqrt(1 - (v_0^2/r mu_y g)^2)
-            a_x = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r[j] * mu_y * g)) ** 2)
+            a_x_friction = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r[j] * mu_y * g)) ** 2)
+            a_x_engine = self.car.a_max(v_0)
+            a_x = min(a_x_engine, a_x_friction)
+            
             self.v[j] = np.sqrt(v_0 ** 2 + 2 * a_x * dx)
         
         return self.v
