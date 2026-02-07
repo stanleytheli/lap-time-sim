@@ -148,7 +148,7 @@ $a_{x,engine} = \frac{F_{engine}}{m} = \frac{\tau({\omega_{motor}})}{mr_{wheel}}
 
 and we get it as a function of speed $v$ using the following relation, with drive ratio $D$: 
 
-$\omega_{motor} = D \omega_{speed} = D \frac{v}{r_{wheel}}$
+$\omega_{motor} = D \omega_{wheel} = D \frac{v}{r_{wheel}}$
 
 ### DRAG
 
