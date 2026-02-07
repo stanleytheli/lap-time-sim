@@ -73,3 +73,7 @@ class Car:
         self.drag_coef = drag_coef
         self.frontal_area = frontal_area
         self.rho_air = rho_air
+        
+        self.total_drag_coef = None
+        if self.drag_coef is not None:
+            self.total_drag_coef = 0.5 * self.drag_coef * self.frontal_area * self.rho_air / self.m

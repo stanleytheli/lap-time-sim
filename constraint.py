@@ -4,6 +4,12 @@
 # apexes are local minimums of speed so all acceleration goes toward them (a_y = mu_y * g)
 # a = mu_y * g = v^2/r ==> sqrt(mu_y * g * r)
 
+# NOTE: this changes under air drag!
+# air drag: have to allocate some friction to countering air drag
+# this probably changes the constraint points, but, uhh, let's assume that's negligible
+# at constraint points: a_x = k v^2 (k is total drag coef)
+# solving again, we obtain v = sqrt(mu_y g r) / 4throot(1 + (mu_y r k / mu_x)^2)
+
 # expand out from each constraint point
 # v(x + dx) = sqrt(v_0^2 + 2 a_x dx)
 # to find a_x: use traction ellipse assumption and a_y = v_0^2/r
@@ -37,7 +43,12 @@ class Constraint:
         if self.rest:
             self.v[i] = 0
         else:
-            self.v[i] = np.sqrt(car.mu_y * car.g * r[i])
+
+            if self.car.total_drag_coef is not None:
+                falloff = np.power(1 + (car.mu_y * r[i] * car.total_drag_coef / car.mu_x) ** 2, 0.25)
+                self.v[i] = np.sqrt(car.mu_y * car.g * r[i]) / falloff
+            else:
+                self.v[i] = np.sqrt(car.mu_y * car.g * r[i])
 
     def full_solve(self):
         v, r = self.v, self.track.r
@@ -67,10 +78,10 @@ class Constraint:
         a_x = min(a_x_engine, a_x_friction)
 
         # air resistance
-        drag_coef, frontal_area, rho_air = self.car.drag_coef, self.car.frontal_area, self.car.rho_air
-        if drag_coef is not None:
-            m = self.car.m
-            a_drag = 0.5 * drag_coef * frontal_area * rho_air * (v_0 ** 2) / m
+        total_drag_coef = self.car.total_drag_coef
+
+        if total_drag_coef is not None:
+            a_drag = total_drag_coef * (v_0 ** 2)
 
             if forward:
                 a_x -= a_drag
