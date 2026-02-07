@@ -179,3 +179,11 @@ NOTE: technically, i think that the constraint points' locations should be chang
 after expanding from all constraints, we take the minimum speed at each point. lap time is then:
 
 $t = \sum \frac{dx}{v}$
+
+EDGE CASE ALERT!!! EDGE CASE ALERT!!!
+
+if you just do this, your estimates will be off by quite a bit for large $dx$. smaller $dx$ will be better, but can we make the convergence faster?
+
+there are some points where $v=0$, namely the start and the end. it just so happens that small $v$ points are also the most important, as they contribute most to the time.
+
+my solution: suppose at the start, $x=0$, $v(0)=0$. then assume we accelerated uniformly to $v(0+dx)$, making the average speed $\frac{v(0) + v(0+dx)}{2} = \frac{v(dx)}{2}$, making our estimate of the time $\frac{2dx}{v(dx)}$. similarly, for the ending, $x=x_f$, just use $v(x_f-dx)$.
