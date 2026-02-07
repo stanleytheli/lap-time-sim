@@ -5,15 +5,19 @@ from utils import gen_linted_func
 # basically just an information container class for all physical variables
 class Car:
 
-
     _INFTY = 999999 # infinity value for infinite acceleration
 
-    def __init__(self, m, mu_x, mu_y, g = 9.8, 
+    def __init__(self, m, mu_x, mu_y, g = 9.8,
+                
                 sim_engine = False, 
                 drive_ratio = None, 
                 r_wheel = None, 
                 torque_value = None,
-                torque_csv = None):
+                torque_csv = None,
+
+                drag_coef = None,
+                frontal_area = None,
+                rho_air = 1.225,):
         """
         Parameters:
         m: kilograms. mass of car
@@ -27,6 +31,9 @@ class Car:
 
         torque_value: const torque to use if you dont have a torque curve. MUTUALLY EXCLUSIVE WITH TORQUE CSV
         torque_csv: path to csv with motor torque curve data
+
+        drag_coef: unitless. drag coefficient
+        frontal_area: m^2. frontal area of car
         """
         
         self.m = m
@@ -62,3 +69,7 @@ class Car:
                 return self._INFTY
         
         self.a_max = a_max
+
+        self.drag_coef = drag_coef
+        self.frontal_area = frontal_area
+        self.rho_air = rho_air

@@ -49,34 +49,34 @@ class Constraint:
 
         # accelerate
         for j in range(self.i + 1, N):
-            v_0 = self.v[j - 1]
-
-            # numerical stability check
-            if (r[j] * mu_y * g) < (v_0 ** 2):
-                self.v[j] = v_0
-                continue
-
-            # a_x = mu_x g sqrt(1 - (v_0^2/r mu_y g)^2)
-            a_x_friction = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r[j] * mu_y * g)) ** 2) 
-            a_x_engine = self.car.a_max(v_0)
-            a_x = min(a_x_engine, a_x_friction)
-
-            self.v[j] = np.sqrt(v_0 ** 2 + 2 * a_x * dx)
+            self.v[j] = self.next_v(self.v[j - 1], r[j], mu_x, mu_y, g, dx, forward=True)
         
         # decelerate
         for j in range(self.i - 1, -1, -1):
-            v_0 = self.v[j + 1]
-
-            # numerical stability check
-            if (r[j] * mu_y * g) < (v_0 ** 2):
-                self.v[j] = v_0
-                continue
-
-            # a_x = mu_x g sqrt(1 - (v_0^2/r mu_y g)^2)
-            a_x_friction = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r[j] * mu_y * g)) ** 2)
-            a_x_engine = self.car.a_max(v_0)
-            a_x = min(a_x_engine, a_x_friction)
-            
-            self.v[j] = np.sqrt(v_0 ** 2 + 2 * a_x * dx)
+            self.v[j] = self.next_v(self.v[j + 1], r[j], mu_x, mu_y, g, dx, forward=False)
         
         return self.v
+    
+    def next_v(self, v_0, r, mu_x, mu_y, g, dx, forward=True):
+        # numerical stability check
+        if (r * mu_y * g) < (v_0 ** 2):
+            return v_0
+
+        a_x_friction = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r * mu_y * g)) ** 2)
+        a_x_engine = self.car.a_max(v_0)
+        a_x = min(a_x_engine, a_x_friction)
+
+        # air resistance
+        drag_coef, frontal_area, rho_air = self.car.drag_coef, self.car.frontal_area, self.car.rho_air
+        if drag_coef is not None:
+            m = self.car.m
+            a_drag = 0.5 * drag_coef * frontal_area * rho_air * (v_0 ** 2) / m
+
+            if forward:
+                a_x -= a_drag
+                if a_x < 0:
+                    a_x = 0
+            else:
+                a_x += a_drag
+        
+        return np.sqrt(v_0 ** 2 + 2 * a_x * dx)
