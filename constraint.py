@@ -40,6 +40,8 @@ class Constraint:
         i = self.i
         self.v = np.ndarray(shape=r.shape)
 
+        self.a_x_applied = np.ndarray(shape=r.shape) # just for data keeping purposes
+
         if self.rest:
             self.v[i] = 0
         else:
@@ -47,8 +49,10 @@ class Constraint:
             if self.car.total_drag_coef is not None:
                 falloff = np.power(1 + (car.mu_y * r[i] * car.total_drag_coef / car.mu_x) ** 2, 0.25)
                 self.v[i] = np.sqrt(car.mu_y * car.g * r[i]) / falloff
+                self.a_x_applied[i] = self.car.total_drag_coef * (self.v[i] ** 2)
             else:
                 self.v[i] = np.sqrt(car.mu_y * car.g * r[i])
+                self.a_x_applied[i] = 0
 
     def full_solve(self):
         v, r = self.v, self.track.r
@@ -60,34 +64,42 @@ class Constraint:
 
         # accelerate
         for j in range(self.i + 1, N):
-            self.v[j] = self.next_v(self.v[j - 1], r[j], mu_x, mu_y, g, dx, forward=True)
+            self.v[j], self.a_x_applied[j] = self.step(self.v[j - 1], r[j], mu_x, mu_y, g, dx, forward=True)
         
         # decelerate
         for j in range(self.i - 1, -1, -1):
-            self.v[j] = self.next_v(self.v[j + 1], r[j], mu_x, mu_y, g, dx, forward=False)
+            self.v[j], self.a_x_applied[j] = self.step(self.v[j + 1], r[j], mu_x, mu_y, g, dx, forward=False)
         
-        return self.v
+        return self.v, self.a_x_applied
     
-    def next_v(self, v_0, r, mu_x, mu_y, g, dx, forward=True):
+    def step(self, v_0, r, mu_x, mu_y, g, dx, forward=True):
         # numerical stability check
         if (r * mu_y * g) < (v_0 ** 2):
-            return v_0
+            a_x_applied = self.car.total_drag_coef * (v_0 ** 2) if self.car.total_drag_coef else 0
+            return v_0, a_x_applied
 
         a_x_friction = mu_x * g * np.sqrt(1 - (v_0 ** 2 / (r * mu_y * g)) ** 2)
         a_x_engine = self.car.a_max(v_0)
-        a_x = min(a_x_engine, a_x_friction)
+        a_x_applied = min(a_x_engine, a_x_friction)
 
         # air resistance
         total_drag_coef = self.car.total_drag_coef
 
+        a_x = a_x_applied
         if total_drag_coef is not None:
             a_drag = total_drag_coef * (v_0 ** 2)
 
             if forward:
+                # forward: drag against you
                 a_x -= a_drag
                 if a_x < 0:
                     a_x = 0
             else:
+                # backward: drag helping you
                 a_x += a_drag
+
+        if not forward:
+            # we'll make a_x_applied signed instead of a magnitude
+            a_x_applied = -a_x_applied
         
-        return np.sqrt(v_0 ** 2 + 2 * a_x * dx)
+        return np.sqrt(v_0 ** 2 + 2 * a_x * dx), a_x_applied

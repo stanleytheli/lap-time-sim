@@ -84,9 +84,17 @@ output is a dictionary with many interesting values.
 full list:
 ```
 "lap_time" - total time
-"v(i)" - indexed speed
-"a_x(i)" - indexed forward/backward acceleration
-"a_y(i)" - indexed left/right acceleration, not signed
+"total_energy" - total energy used
+
+"v(i)" - speed
+"vs(i)" - speed expansions from each constraint, represented as a matrix. transpose before graphing
+"a_x(i)" - forward/backward acceleration, signed
+"a_y(i)" - left/right acceleration, not signed
+"a_x_applied(i)" - forward/backward acceleration from the car itself (aka not counting drag), signed
+"F(i)" - force
+"E(i)" - (cumulative) energy usage
+"P(i)" - power
+
 "x_axis" - for plotting things w.r.t. distance
 "t_axis" - for plotting things w.r.t. time
 ```
@@ -162,7 +170,7 @@ where $k$ is the total drag coefficient ($F_{drag}=mkv^2$). using the elliptical
 
 $v = \frac{\sqrt{\mu_y g r}}{\sqrt[4]{1 + \left(\frac{\mu_y r k}{\mu_x}\right)^2}}$
 
-tip: sanity check this by sending $k \rightarrow 0 $ and verifying that the earlier result $\sqrt{\mu_y rg}$ is obtained
+tip: sanity check this by sending $k \rightarrow 0$ and verifying that the earlier result $\sqrt{\mu_y rg}$ is obtained
 
 during expansion, we make the simple modification:
 
@@ -187,3 +195,13 @@ if you just do this, your estimates will be off by quite a bit for large $dx$. s
 there are some points where $v=0$, namely the start and the end. it just so happens that small $v$ points are also the most important, as they contribute most to the time.
 
 my solution: suppose at the start, $x=0$, $v(0)=0$. then assume we accelerated uniformly to $v(0+dx)$, making the average speed $\frac{v(0) + v(0+dx)}{2} = \frac{v(dx)}{2}$, making our estimate of the time $\frac{2dx}{v(dx)}$. similarly, for the ending, $x=x_f$, just use $v(x_f-dx)$.
+
+### ENERGY
+
+we use the kinematic formulas
+
+$F_{applied} = m a_{x,applied}$
+$dE = F_{applied} dx$
+$P = F_{applied} v$
+
+to calculate force, energy, and power

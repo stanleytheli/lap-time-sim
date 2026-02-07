@@ -48,20 +48,26 @@ class rxTrack:
 
     def compute_v(self, car):
         self.vs = np.ndarray(shape=(len(self.constraints), len(self.r)))
+        self.a_x_applieds = np.ndarray(shape=(len(self.constraints), len(self.r)))
+
         for i, constraint in enumerate(self.constraints):
             constraint.register_car(car)
-            self.vs[i] = constraint.full_solve()
+            self.vs[i], self.a_x_applieds[i] = constraint.full_solve()
 
+        idxs = np.argmin(self.vs, axis=0)
         self.v = np.min(self.vs, axis=0)
+        self.a_x_applied = [a_x_app[idx] for a_x_app, idx in zip(self.a_x_applieds.T, idxs)]
 
-        return {"v(i)" : self.v, "vs(i)" : self.vs}
+        return {"v(i)" : self.v, "vs(i)" : self.vs, "a_x_applied(i)" : self.a_x_applied}
     
     def solve(self, car):
         output = self.compute_v(car)
         v = output["v(i)"]
+        a_x_applied = output["a_x_applied(i)"]
         N = len(v)
         dx = self.dx
         r = self.r
+        m = car.m
     
         output["x_axis"] = np.arange(N) * dx
 
@@ -89,7 +95,7 @@ class rxTrack:
         output["t_axis"] = times
         output["lap_time"] = lap_time
 
-        # compute acceleration
+        # compute acceleration (net, rather than applied)
         a_x = []
         a_y = []
         for i in range(0, len(v)):
@@ -103,6 +109,27 @@ class rxTrack:
             a_y.append(v[i]**2 / self.r[i])
         output["a_x(i)"] = a_x
         output["a_y(i)"] = a_y
+
+        # compute energy usage
+        force = []
+        energy = []
+        total_energy = 0
+        power = []
+        for i in range(0, len(v)):
+            # F_applied = m a_x_applied
+            # dE = F_applied * dx
+            # dP = dE / dt = F_applied * v
+
+            force.append(m * abs(a_x_applied[i]))
+            power.append(m * abs(a_x_applied[i]) * v[i])
+
+            total_energy += m * abs(a_x_applied[i]) * dx
+            energy.append(total_energy)
+
+        output["F(i)"] = force
+        output["E(i)"] = energy
+        output["P(i)"] = power
+        output["total_energy"] = total_energy
 
         return output
 
