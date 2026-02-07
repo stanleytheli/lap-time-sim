@@ -61,6 +61,7 @@ class rxTrack:
         v = output["v(i)"]
         N = len(v)
         dx = self.dx
+        r = self.r
     
         output["x_axis"] = np.arange(N) * dx
 
@@ -78,7 +79,6 @@ class rxTrack:
                     lap_time += 2 * dx / v[i + 1] 
                 elif i - 1 >= 0 and v[i - 1] != 0:
                     lap_time += 2 * dx / v[i - 1]
-
                 times.append(lap_time)
                 continue
 
@@ -88,6 +88,21 @@ class rxTrack:
 
         output["t_axis"] = times
         output["lap_time"] = lap_time
+
+        # compute acceleration
+        a_x = []
+        a_y = []
+        for i in range(0, len(v)):
+            if i == 0:
+                v_0 = 0
+            else:
+                v_0 = v[i - 1]
+            v_1 = v[i]
+            # just reverse calculate the acceleration
+            a_x.append((v_1**2 - v_0**2) / (2 * dx)) 
+            a_y.append(v[i]**2 / self.r[i])
+        output["a_x(i)"] = a_x
+        output["a_y(i)"] = a_y
 
         return output
 
