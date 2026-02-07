@@ -201,7 +201,9 @@ my solution: suppose at the start, $x=0$, $v(0)=0$. then assume we accelerated u
 we use the kinematic formulas
 
 $F_{applied} = m a_{x,applied}$
+
 $dE = F_{applied} dx$
+
 $P = F_{applied} v$
 
 to calculate force, energy, and power
